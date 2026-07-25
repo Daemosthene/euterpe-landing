@@ -40,7 +40,7 @@ export default async function handler(req, res) {
     const cleanSiteUrl = process.env.SITE_URL.replace(/\/$/, '');
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
-      ui_mode: 'embedded',
+      ui_mode: 'embedded_page',
       line_items: [
         {
           price: process.env.STRIPE_PRICE_ID,
