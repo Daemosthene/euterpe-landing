@@ -930,7 +930,7 @@ function CheckoutPage({ checkoutRoute, releaseNotesRoute }) {
         throw new Error('Stripe failed to initialize.');
       }
 
-      const embeddedCheckout = await stripe.initEmbeddedCheckout({
+      const embeddedCheckout = await stripe.createEmbeddedCheckoutPage({
         clientSecret: result.clientSecret
       });
 
