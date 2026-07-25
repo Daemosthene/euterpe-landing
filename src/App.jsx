@@ -1,11 +1,15 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { loadStripe } from '@stripe/stripe-js';
 import Aurora from './blocks/Backgrounds/Aurora/Aurora';
 import { ParallaxHeroImages } from './components/ui/parallax-hero-images';
 import './App.css';
 
 const releaseNotesRoute = '#releases';
 const checkoutRoute = '#checkout';
+const checkoutSuccessRoute = '#checkout/success';
 const heroImages = ['/EuterpeHero1.png', '/EuterpeHero2.png', '/EuterpeHero3.png'];
+const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
+const stripePromise = stripePublishableKey ? loadStripe(stripePublishableKey) : null;
 
 const heroBenefits = [
   { icon: 'library', label: 'Local library first' },
@@ -181,11 +185,13 @@ function getRouteFromHash() {
     return 'home';
   }
 
-  if (window.location.hash === releaseNotesRoute) {
+  const [hashPath] = window.location.hash.split('?');
+
+  if (hashPath === releaseNotesRoute) {
     return 'releases';
   }
 
-  if (window.location.hash === checkoutRoute) {
+  if (hashPath === checkoutRoute || hashPath === checkoutSuccessRoute) {
     return 'checkout';
   }
 
@@ -796,8 +802,151 @@ function CheckoutHeader({ checkoutRoute }) {
 }
 
 function CheckoutPage({ checkoutRoute, releaseNotesRoute }) {
-  const [paymentMethod, setPaymentMethod] = useState('card');
-  const [showPlaceholderMessage, setShowPlaceholderMessage] = useState(false);
+  const [email, setEmail] = useState('');
+  const [country, setCountry] = useState('United States');
+  const [isStartingCheckout, setIsStartingCheckout] = useState(false);
+  const [checkoutError, setCheckoutError] = useState('');
+  const [isEmbeddedMounted, setIsEmbeddedMounted] = useState(false);
+  const [isVerifyingPayment, setIsVerifyingPayment] = useState(false);
+  const [isPaymentVerified, setIsPaymentVerified] = useState(false);
+  const [verificationMessage, setVerificationMessage] = useState('');
+  const [verifiedSessionId, setVerifiedSessionId] = useState('');
+  const [downloadToken, setDownloadToken] = useState('');
+  const checkoutMountRef = useRef(null);
+  const embeddedCheckoutRef = useRef(null);
+
+  const hash = typeof window === 'undefined' ? '' : window.location.hash;
+  const [hashPath, hashQuery = ''] = hash.split('?');
+  const isSuccessView = hashPath === checkoutSuccessRoute;
+
+  useEffect(() => {
+    return () => {
+      if (embeddedCheckoutRef.current) {
+        embeddedCheckoutRef.current.destroy();
+        embeddedCheckoutRef.current = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isSuccessView) {
+      setIsVerifyingPayment(false);
+      setIsPaymentVerified(false);
+      setVerificationMessage('');
+      setVerifiedSessionId('');
+      setDownloadToken('');
+      return;
+    }
+
+    const params = new URLSearchParams(hashQuery);
+    const sessionId = params.get('session_id');
+
+    if (!sessionId) {
+      setIsPaymentVerified(false);
+      setVerificationMessage('Missing checkout session. Return to checkout and try again.');
+      setDownloadToken('');
+      return;
+    }
+
+    let cancelled = false;
+    const verify = async () => {
+      try {
+        setIsVerifyingPayment(true);
+        setVerificationMessage('');
+        const response = await fetch(`/api/verify-session?session_id=${encodeURIComponent(sessionId)}`);
+        const result = await response.json();
+
+        if (cancelled) {
+          return;
+        }
+
+        if (!response.ok || !result.verified) {
+          setIsPaymentVerified(false);
+          setVerificationMessage(result.message || 'Payment is not verified yet. If you just paid, wait a moment and refresh.');
+          setDownloadToken('');
+          return;
+        }
+
+        setIsPaymentVerified(true);
+        setVerifiedSessionId(sessionId);
+        setDownloadToken(typeof result.downloadToken === 'string' ? result.downloadToken : '');
+      } catch (error) {
+        if (!cancelled) {
+          setIsPaymentVerified(false);
+          setVerificationMessage('Could not verify payment right now. Please refresh and try again.');
+          setDownloadToken('');
+        }
+      } finally {
+        if (!cancelled) {
+          setIsVerifyingPayment(false);
+        }
+      }
+    };
+
+    verify();
+    return () => {
+      cancelled = true;
+    };
+  }, [hashQuery, isSuccessView]);
+
+  const handleStartCheckout = async () => {
+    setCheckoutError('');
+
+    if (!email.trim()) {
+      setCheckoutError('Enter an email address to continue.');
+      return;
+    }
+
+    if (!stripePromise) {
+      setCheckoutError('Stripe is not configured. Add VITE_STRIPE_PUBLISHABLE_KEY and redeploy.');
+      return;
+    }
+
+    try {
+      setIsStartingCheckout(true);
+      if (embeddedCheckoutRef.current) {
+        embeddedCheckoutRef.current.destroy();
+        embeddedCheckoutRef.current = null;
+      }
+
+      const response = await fetch('/api/create-checkout-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          email,
+          country
+        })
+      });
+
+      const result = await response.json();
+      if (!response.ok || !result.clientSecret) {
+        throw new Error(result.error || 'Could not start checkout session.');
+      }
+
+      const stripe = await stripePromise;
+      if (!stripe) {
+        throw new Error('Stripe failed to initialize.');
+      }
+
+      const embeddedCheckout = await stripe.initEmbeddedCheckout({
+        clientSecret: result.clientSecret
+      });
+
+      embeddedCheckoutRef.current = embeddedCheckout;
+      if (checkoutMountRef.current) {
+        embeddedCheckout.mount(checkoutMountRef.current);
+      }
+
+      setIsEmbeddedMounted(true);
+    } catch (error) {
+      setCheckoutError(error instanceof Error ? error.message : 'Could not start checkout.');
+      setIsEmbeddedMounted(false);
+    } finally {
+      setIsStartingCheckout(false);
+    }
+  };
 
   return (
     <main className="checkout-main" id="top">
@@ -806,8 +955,12 @@ function CheckoutPage({ checkoutRoute, releaseNotesRoute }) {
           <a className="checkout-back" href="#">Back to product</a>
 
           <div className="checkout-intro">
-            <h1>Complete your download</h1>
-            <p>Secure checkout placeholder for Euterpe on Windows.</p>
+            <h1>{isSuccessView ? 'Payment complete' : 'Complete your download'}</h1>
+            <p>
+              {isSuccessView
+                ? 'Verify your payment and download Euterpe for Windows.'
+                : 'Secure Stripe checkout for Euterpe on Windows.'}
+            </p>
           </div>
 
           <div className="checkout-grid">
@@ -840,105 +993,104 @@ function CheckoutPage({ checkoutRoute, releaseNotesRoute }) {
 
             <article className="checkout-card payment-card" aria-label="Payment details">
               <div className="payment-card-head">
-                <h2>Checkout</h2>
-                <span>Stripe target</span>
+                <h2>{isSuccessView ? 'Download access' : 'Checkout'}</h2>
+                <span>{isSuccessView ? 'Verified by server' : 'Stripe embedded checkout'}</span>
               </div>
 
-              <div className="payment-methods" role="tablist" aria-label="Payment method">
-                <button
-                  type="button"
-                  className={`payment-tab ${paymentMethod === 'card' ? 'is-active' : ''}`}
-                  role="tab"
-                  aria-selected={paymentMethod === 'card'}
-                  onClick={() => setPaymentMethod('card')}
-                >
-                  Card
-                </button>
-                <button
-                  type="button"
-                  className={`payment-tab ${paymentMethod === 'paypal' ? 'is-active' : ''}`}
-                  role="tab"
-                  aria-selected={paymentMethod === 'paypal'}
-                  onClick={() => setPaymentMethod('paypal')}
-                >
-                  PayPal
-                </button>
-              </div>
+              {isSuccessView ? (
+                <div className="checkout-form" role="status">
+                  {isVerifyingPayment ? (
+                    <p className="checkout-disclaimer">Verifying payment status...</p>
+                  ) : null}
 
-              <form className="checkout-form" onSubmit={(event) => event.preventDefault()}>
-                <label>
-                  Email
-                  <input type="email" placeholder="you@example.com" autoComplete="email" />
-                </label>
+                  {verificationMessage ? (
+                    <p className="checkout-placeholder-note">{verificationMessage}</p>
+                  ) : null}
 
-                {paymentMethod === 'card' ? (
-                  <>
-                    <label>
-                      Card information
-                      <input type="text" placeholder="1234 1234 1234 1234" autoComplete="cc-number" />
-                    </label>
+                  {isPaymentVerified ? (
+                    <>
+                      <p className="checkout-disclaimer">
+                        Payment verified. Your download button is now unlocked.
+                      </p>
+                      <a
+                        className="btn btn-primary checkout-submit"
+                        href={downloadToken
+                          ? `/api/download?token=${encodeURIComponent(downloadToken)}`
+                          : `/api/download?session_id=${encodeURIComponent(verifiedSessionId)}`}
+                      >
+                        Download Euterpe.exe
+                      </a>
+                    </>
+                  ) : (
+                    <a className="btn btn-secondary checkout-submit" href={checkoutRoute}>
+                      Return to checkout
+                    </a>
+                  )}
+                </div>
+              ) : (
+                <form className="checkout-form" onSubmit={(event) => event.preventDefault()}>
+                  <label>
+                    Email
+                    <input
+                      type="email"
+                      placeholder="you@example.com"
+                      autoComplete="email"
+                      value={email}
+                      onChange={(event) => setEmail(event.target.value)}
+                    />
+                  </label>
 
-                    <div className="checkout-row">
-                      <label>
-                        MM / YY
-                        <input type="text" placeholder="MM / YY" autoComplete="cc-exp" />
-                      </label>
-                      <label>
-                        CVC
-                        <input type="text" placeholder="CVC" autoComplete="cc-csc" />
-                      </label>
-                    </div>
+                  <label>
+                    Country / region
+                    <select
+                      value={country}
+                      aria-label="Country or region"
+                      onChange={(event) => setCountry(event.target.value)}
+                    >
+                      <option>United States</option>
+                      <option>Canada</option>
+                      <option>United Kingdom</option>
+                      <option>Australia</option>
+                    </select>
+                  </label>
 
-                    <label>
-                      Name on card
-                      <input type="text" placeholder="Full name" autoComplete="cc-name" />
-                    </label>
-                  </>
-                ) : (
-                  <div className="paypal-placeholder" role="status">
-                    PayPal checkout will appear here once Stripe integration is enabled.
-                  </div>
-                )}
+                  <button
+                    type="button"
+                    className="btn btn-primary checkout-submit"
+                    onClick={handleStartCheckout}
+                    disabled={isStartingCheckout}
+                  >
+                    {isStartingCheckout ? 'Starting secure checkout...' : 'Continue to secure checkout'}
+                  </button>
 
-                <label>
-                  Country / region
-                  <select defaultValue="United States" aria-label="Country or region">
-                    <option>United States</option>
-                    <option>Canada</option>
-                    <option>United Kingdom</option>
-                    <option>Australia</option>
-                  </select>
-                </label>
+                  {checkoutError ? (
+                    <p className="checkout-placeholder-note" role="alert">
+                      {checkoutError}
+                    </p>
+                  ) : null}
 
-                <button
-                  type="button"
-                  className="btn btn-primary checkout-submit"
-                  onClick={() => setShowPlaceholderMessage(true)}
-                >
-                  Continue to secure checkout
-                </button>
-
-                {showPlaceholderMessage && (
-                  <p className="checkout-placeholder-note" role="status">
-                    Placeholder mode: payment processing and automatic EXE download activation will be wired in a follow-up iteration.
+                  <p className="checkout-disclaimer">
+                    Secure checkout is handled by Stripe. Card and wallet options appear in the embedded form.
                   </p>
-                )}
 
-                <p className="checkout-disclaimer">
-                  Secure checkout target: Stripe. This preview does not process real payments.
-                </p>
-              </form>
+                  <div
+                    className={`embedded-checkout-shell${isEmbeddedMounted ? ' is-ready' : ''}`}
+                    ref={checkoutMountRef}
+                    aria-live="polite"
+                  />
+                </form>
+              )}
             </article>
           </div>
 
           <div className="checkout-trust-row" aria-label="Checkout trust indicators">
             <article className="trust-item">
               <h3>Secure checkout</h3>
-              <p>Card and PayPal options are included in the final Stripe flow.</p>
+              <p>Payments are handled by Stripe with server-side session verification.</p>
             </article>
             <article className="trust-item">
               <h3>Instant access</h3>
-              <p>After confirmed payment, the EXE download will start automatically.</p>
+              <p>After payment is verified, download access is unlocked immediately.</p>
             </article>
             <article className="trust-item">
               <h3>Windows ready</h3>

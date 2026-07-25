@@ -936,6 +936,23 @@ img {
   width: 100%;
 }
 
+.checkout-submit[disabled] {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.embedded-checkout-shell {
+  min-height: 280px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 10px;
+}
+
+.embedded-checkout-shell.is-ready {
+  border-color: #575760;
+}
+
 .paypal-placeholder {
   border: 1px dashed #4f4f58;
   border-radius: 10px;
