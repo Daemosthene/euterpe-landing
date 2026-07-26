@@ -815,9 +815,31 @@ function CheckoutPage({ checkoutRoute, releaseNotesRoute }) {
   const checkoutMountRef = useRef(null);
   const embeddedCheckoutRef = useRef(null);
 
-  const hash = typeof window === 'undefined' ? '' : window.location.hash;
-  const [hashPath, hashQuery = ''] = hash.split('?');
+  const [hashValue, setHashValue] = useState(() => (typeof window === 'undefined' ? '' : window.location.hash));
+  const [hashPath, hashQuery = ''] = hashValue.split('?');
   const isSuccessView = hashPath === checkoutSuccessRoute;
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return undefined;
+    }
+
+    const syncHashValue = () => {
+      setHashValue(window.location.hash);
+    };
+
+    window.addEventListener('hashchange', syncHashValue);
+    window.addEventListener('popstate', syncHashValue);
+
+    // Fallback for integrations that mutate URL without consistently emitting events.
+    const fallbackInterval = setInterval(syncHashValue, 250);
+
+    return () => {
+      window.removeEventListener('hashchange', syncHashValue);
+      window.removeEventListener('popstate', syncHashValue);
+      clearInterval(fallbackInterval);
+    };
+  }, []);
 
   useEffect(() => {
     return () => {
