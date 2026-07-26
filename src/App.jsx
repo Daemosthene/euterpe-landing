@@ -810,8 +810,8 @@ function CheckoutPage({ checkoutRoute, releaseNotesRoute }) {
   const [isVerifyingPayment, setIsVerifyingPayment] = useState(false);
   const [isPaymentVerified, setIsPaymentVerified] = useState(false);
   const [verificationMessage, setVerificationMessage] = useState('');
-  const [verifiedSessionId, setVerifiedSessionId] = useState('');
   const [downloadToken, setDownloadToken] = useState('');
+  const [verificationAttempt, setVerificationAttempt] = useState(0);
   const checkoutMountRef = useRef(null);
   const embeddedCheckoutRef = useRef(null);
 
@@ -833,7 +833,6 @@ function CheckoutPage({ checkoutRoute, releaseNotesRoute }) {
       setIsVerifyingPayment(false);
       setIsPaymentVerified(false);
       setVerificationMessage('');
-      setVerifiedSessionId('');
       setDownloadToken('');
       return;
     }
@@ -862,18 +861,25 @@ function CheckoutPage({ checkoutRoute, releaseNotesRoute }) {
 
         if (!response.ok || !result.verified) {
           setIsPaymentVerified(false);
-          setVerificationMessage(result.message || 'Payment is not verified yet. If you just paid, wait a moment and refresh.');
+          setVerificationMessage(result.message || 'Payment is not verified yet. If you just paid, retry verification in a moment.');
+          setDownloadToken('');
+          return;
+        }
+
+        const token = typeof result.downloadToken === 'string' ? result.downloadToken : '';
+        if (!token) {
+          setIsPaymentVerified(false);
+          setVerificationMessage('Payment was found, but a secure download token could not be generated. Retry verification.');
           setDownloadToken('');
           return;
         }
 
         setIsPaymentVerified(true);
-        setVerifiedSessionId(sessionId);
-        setDownloadToken(typeof result.downloadToken === 'string' ? result.downloadToken : '');
+        setDownloadToken(token);
       } catch (error) {
         if (!cancelled) {
           setIsPaymentVerified(false);
-          setVerificationMessage('Could not verify payment right now. Please refresh and try again.');
+          setVerificationMessage('Could not verify payment right now. Retry verification in a moment.');
           setDownloadToken('');
         }
       } finally {
@@ -887,7 +893,14 @@ function CheckoutPage({ checkoutRoute, releaseNotesRoute }) {
     return () => {
       cancelled = true;
     };
-  }, [hashQuery, isSuccessView]);
+  }, [hashQuery, isSuccessView, verificationAttempt]);
+
+  const handleRetryVerification = () => {
+    if (isVerifyingPayment) {
+      return;
+    }
+    setVerificationAttempt((previous) => previous + 1);
+  };
 
   const handleStartCheckout = async () => {
     setCheckoutError('');
@@ -1014,17 +1027,25 @@ function CheckoutPage({ checkoutRoute, releaseNotesRoute }) {
                       </p>
                       <a
                         className="btn btn-primary checkout-submit"
-                        href={downloadToken
-                          ? `/api/download?token=${encodeURIComponent(downloadToken)}`
-                          : `/api/download?session_id=${encodeURIComponent(verifiedSessionId)}`}
+                        href={`/api/download?token=${encodeURIComponent(downloadToken)}`}
                       >
                         Download Euterpe.exe
                       </a>
                     </>
                   ) : (
-                    <a className="btn btn-secondary checkout-submit" href={checkoutRoute}>
-                      Return to checkout
-                    </a>
+                    <>
+                      <button
+                        type="button"
+                        className="btn btn-primary checkout-submit"
+                        onClick={handleRetryVerification}
+                        disabled={isVerifyingPayment}
+                      >
+                        {isVerifyingPayment ? 'Verifying payment...' : 'Retry verification'}
+                      </button>
+                      <a className="btn btn-secondary checkout-submit" href={checkoutRoute}>
+                        Return to checkout
+                      </a>
+                    </>
                   )}
                 </div>
               ) : (
