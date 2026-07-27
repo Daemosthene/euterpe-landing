@@ -7,6 +7,10 @@ import './App.css';
 const releaseNotesRoute = '#releases';
 const checkoutRoute = '#checkout';
 const checkoutSuccessRoute = '#checkout/success';
+const privacyRoute = '#privacy';
+const termsRoute = '#terms';
+const supportEmail = 'support@euterpe-app.com';
+const publisherName = 'Euterpe Project';
 const heroImages = ['/EuterpeHero1.png', '/EuterpeHero2.png', '/EuterpeHero3.png'];
 const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
 const stripePromise = stripePublishableKey ? loadStripe(stripePublishableKey) : null;
@@ -180,6 +184,113 @@ const installOptions = [
   }
 ];
 
+const privacySummaryCards = [
+  {
+    eyebrow: 'Support',
+    title: supportEmail,
+    description: 'Use this address for billing questions, privacy requests, or download help.'
+  },
+  {
+    eyebrow: 'Data use',
+    title: 'Checkout and delivery only',
+    description: 'Purchase details are used to verify payment, deliver access, and respond to support.'
+  },
+  {
+    eyebrow: 'Retention',
+    title: 'Minimal retention',
+    description: 'We keep only the records needed for fulfillment, support, and abuse prevention.'
+  }
+];
+
+const privacySections = [
+  {
+    title: 'Information we collect',
+    items: [
+      'The email address you enter at checkout so we can complete purchase and support follow-up.',
+      'Country or region for basic reporting and purchase context.',
+      'Stripe session and payment status data needed to verify access.',
+      'Download verification logs that help us detect abuse and troubleshoot failed access.'
+    ]
+  },
+  {
+    title: 'How we use information',
+    items: [
+      'To create the checkout session, verify payment, and unlock the Windows download.',
+      'To respond to support questions and billing requests.',
+      'To monitor suspicious or repeated download attempts and protect the release assets.'
+    ]
+  },
+  {
+    title: 'Retention and security',
+    items: [
+      'Token-based download links are short-lived and require server-side verification.',
+      'Payment and fulfillment checks are kept to the minimum needed for support and auditability.',
+      'We do not use this information for advertising or newsletter tracking.'
+    ]
+  },
+  {
+    title: 'Contact',
+    items: [
+      `Privacy or billing questions: ${supportEmail}`,
+      `Publisher identity: ${publisherName}`,
+      'See the Terms page for refund and licensing details.'
+    ]
+  }
+];
+
+const termsSummaryCards = [
+  {
+    eyebrow: 'Publisher',
+    title: publisherName,
+    description: 'The publisher identity is shown in the footer and policy pages for launch clarity.'
+  },
+  {
+    eyebrow: 'Refunds',
+    title: 'Refund review by email',
+    description: 'Use the support inbox with your order details if you need a billing or refund review.'
+  },
+  {
+    eyebrow: 'Release notes',
+    title: 'Visible before and after purchase',
+    description: 'Users can review version details from the checkout and success flow.'
+  }
+];
+
+const termsSections = [
+  {
+    title: 'License and purchase',
+    items: [
+      'The purchase unlocks the current Windows executable for a single Windows device license.',
+      'This is a one-time purchase, not a subscription.',
+      'Release notes remain available so users can confirm what version line they are buying.'
+    ]
+  },
+  {
+    title: 'Refund policy',
+    items: [
+      `Refund and billing review requests should be sent to ${supportEmail}.`,
+      'Include the checkout email address and any relevant session details so we can verify the purchase quickly.',
+      'We review requests in good faith and respond through the support inbox.'
+    ]
+  },
+  {
+    title: 'Acceptable use',
+    items: [
+      'Do not share the gated download link or token publicly.',
+      'Keep access limited to the device covered by the purchase.',
+      'Use the product in a way that respects the download and payment checks protecting the release.'
+    ]
+  },
+  {
+    title: 'Support and notices',
+    items: [
+      `Support email: ${supportEmail}`,
+      `Publisher: ${publisherName}`,
+      'If the Terms page changes in a future release, the latest version will be linked from the footer.'
+    ]
+  }
+];
+
 function getRouteFromHash() {
   if (typeof window === 'undefined') {
     return 'home';
@@ -189,6 +300,14 @@ function getRouteFromHash() {
 
   if (hashPath === releaseNotesRoute) {
     return 'releases';
+  }
+
+  if (hashPath === privacyRoute) {
+    return 'privacy';
+  }
+
+  if (hashPath === termsRoute) {
+    return 'terms';
   }
 
   if (hashPath === checkoutRoute || hashPath === checkoutSuccessRoute) {
@@ -373,6 +492,10 @@ function App() {
   useEffect(() => {
     if (route === 'releases') {
       document.title = 'Euterpe | Release Notes';
+    } else if (route === 'privacy') {
+      document.title = 'Euterpe | Privacy Policy';
+    } else if (route === 'terms') {
+      document.title = 'Euterpe | Terms';
     } else if (route === 'checkout') {
       document.title = 'Euterpe | Checkout';
     } else {
@@ -486,8 +609,47 @@ function App() {
           </section>
         </main>
 
-        <SiteFooter checkoutRoute={checkoutRoute} releaseNotesRoute={releaseNotesRoute} />
+        <SiteFooter
+          checkoutRoute={checkoutRoute}
+          releaseNotesRoute={releaseNotesRoute}
+          privacyRoute={privacyRoute}
+          termsRoute={termsRoute}
+        />
       </div>
+    );
+  }
+
+  if (route === 'privacy') {
+    return (
+      <LegalPage
+        routeTitle="Privacy Policy"
+        eyebrow="Privacy policy"
+        title="How Euterpe handles purchase and support data"
+        intro="This page explains the small amount of information needed to verify payment, deliver the download, and respond to support requests."
+        summaryCards={privacySummaryCards}
+        sections={privacySections}
+        checkoutRoute={checkoutRoute}
+        releaseNotesRoute={releaseNotesRoute}
+        privacyRoute={privacyRoute}
+        termsRoute={termsRoute}
+      />
+    );
+  }
+
+  if (route === 'terms') {
+    return (
+      <LegalPage
+        routeTitle="Terms"
+        eyebrow="Terms of sale"
+        title="Purchase terms, refund review, and license notes"
+        intro="These terms describe the one-time purchase, refund review path, and the license that applies to the Windows download."
+        summaryCards={termsSummaryCards}
+        sections={termsSections}
+        checkoutRoute={checkoutRoute}
+        releaseNotesRoute={releaseNotesRoute}
+        privacyRoute={privacyRoute}
+        termsRoute={termsRoute}
+      />
     );
   }
 
@@ -495,8 +657,19 @@ function App() {
     return (
       <div className="landing-page checkout-page">
         <CheckoutHeader checkoutRoute={checkoutRoute} />
-        <CheckoutPage checkoutRoute={checkoutRoute} releaseNotesRoute={releaseNotesRoute} />
-        <SiteFooter checkoutRoute={checkoutRoute} releaseNotesRoute={releaseNotesRoute} />
+        <CheckoutPage
+          checkoutRoute={checkoutRoute}
+          releaseNotesRoute={releaseNotesRoute}
+          privacyRoute={privacyRoute}
+          termsRoute={termsRoute}
+          supportEmail={supportEmail}
+        />
+        <SiteFooter
+          checkoutRoute={checkoutRoute}
+          releaseNotesRoute={releaseNotesRoute}
+          privacyRoute={privacyRoute}
+          termsRoute={termsRoute}
+        />
       </div>
     );
   }
@@ -720,7 +893,12 @@ function App() {
         </section>
       </main>
 
-      <SiteFooter checkoutRoute={checkoutRoute} releaseNotesRoute={releaseNotesRoute} />
+      <SiteFooter
+        checkoutRoute={checkoutRoute}
+        releaseNotesRoute={releaseNotesRoute}
+        privacyRoute={privacyRoute}
+        termsRoute={termsRoute}
+      />
     </div>
   );
 }
@@ -801,7 +979,7 @@ function CheckoutHeader({ checkoutRoute }) {
   );
 }
 
-function CheckoutPage({ checkoutRoute, releaseNotesRoute }) {
+function CheckoutPage({ checkoutRoute, releaseNotesRoute, privacyRoute, termsRoute, supportEmail }) {
   const [email, setEmail] = useState('');
   const [country, setCountry] = useState('United States');
   const [isStartingCheckout, setIsStartingCheckout] = useState(false);
@@ -1047,6 +1225,12 @@ function CheckoutPage({ checkoutRoute, releaseNotesRoute }) {
                       <p className="checkout-disclaimer">
                         Payment verified. Your download button is now unlocked.
                       </p>
+                      <div className="checkout-flow-links" aria-label="Release and support links">
+                        <a href={releaseNotesRoute}>View release notes</a>
+                        <a href={privacyRoute}>Privacy policy</a>
+                        <a href={termsRoute}>Terms and refund policy</a>
+                        <a href={`mailto:${supportEmail}`}>Contact support</a>
+                      </div>
                       <a
                         className="btn btn-primary checkout-submit"
                         href={`/api/download?token=${encodeURIComponent(downloadToken)}`}
@@ -1116,6 +1300,13 @@ function CheckoutPage({ checkoutRoute, releaseNotesRoute }) {
                     Secure checkout is handled by Stripe. Card and wallet options appear in the embedded form.
                   </p>
 
+                  <div className="checkout-flow-links" aria-label="Release and support links">
+                    <a href={releaseNotesRoute}>View release notes</a>
+                    <a href={privacyRoute}>Privacy policy</a>
+                    <a href={termsRoute}>Terms and refund policy</a>
+                    <a href={`mailto:${supportEmail}`}>Contact support</a>
+                  </div>
+
                   <div
                     className={`embedded-checkout-shell${isEmbeddedMounted ? ' is-ready' : ''}`}
                     ref={checkoutMountRef}
@@ -1129,11 +1320,11 @@ function CheckoutPage({ checkoutRoute, releaseNotesRoute }) {
           <div className="checkout-trust-row" aria-label="Checkout trust indicators">
             <article className="trust-item">
               <h3>Secure checkout</h3>
-              <p>Payments are handled by Stripe with server-side session verification.</p>
+              <p>Payments are handled by Stripe with server-side session verification and short-lived access tokens.</p>
             </article>
             <article className="trust-item">
               <h3>Instant access</h3>
-              <p>After payment is verified, download access is unlocked immediately.</p>
+              <p>After payment is verified, the gated Windows download is unlocked immediately.</p>
             </article>
             <article className="trust-item">
               <h3>Windows ready</h3>
@@ -1152,7 +1343,83 @@ function CheckoutPage({ checkoutRoute, releaseNotesRoute }) {
   );
 }
 
-function SiteFooter({ checkoutRoute, releaseNotesRoute }) {
+function LegalPage({
+  eyebrow,
+  title,
+  intro,
+  summaryCards,
+  sections,
+  checkoutRoute,
+  releaseNotesRoute,
+  privacyRoute,
+  termsRoute
+}) {
+  return (
+    <div className="landing-page legal-page">
+      <ReleaseHeader checkoutRoute={checkoutRoute} />
+      <main className="release-notes-shell">
+        <section className="section release-hero">
+          <div className="container release-hero-grid">
+            <div className="release-hero-copy">
+              <p className="eyebrow">{eyebrow}</p>
+              <h1>{title}</h1>
+              <p>{intro}</p>
+              <div className="hero-actions release-actions">
+                <a className="btn btn-primary" href={checkoutRoute}>
+                  Download for Windows
+                </a>
+                <a className="btn btn-secondary" href={releaseNotesRoute}>
+                  View Release Notes
+                </a>
+              </div>
+            </div>
+
+            <div className="release-hero-panel" aria-label={`${title} summary`}>
+              {summaryCards.map((card) => (
+                <div key={card.title} className="release-summary-card">
+                  <span>{card.eyebrow}</span>
+                  <strong>{card.title}</strong>
+                  <p>{card.description}</p>
+                </div>
+              ))}
+              <div className="release-summary-card muted">
+                <span>Quick links</span>
+                <strong>Purchase and support</strong>
+                <p>
+                  <a href={privacyRoute}>Privacy policy</a> · <a href={termsRoute}>Terms and refund policy</a>
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="section release-sections-section">
+          <div className="container release-section-grid">
+            {sections.map((section) => (
+              <article key={section.title} className="release-section-card">
+                <h2>{section.title}</h2>
+                <ul>
+                  {section.items.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </article>
+            ))}
+          </div>
+        </section>
+      </main>
+
+      <SiteFooter
+        checkoutRoute={checkoutRoute}
+        releaseNotesRoute={releaseNotesRoute}
+        privacyRoute={privacyRoute}
+        termsRoute={termsRoute}
+      />
+    </div>
+  );
+}
+
+function SiteFooter({ checkoutRoute, releaseNotesRoute, privacyRoute, termsRoute }) {
   return (
     <footer className="site-footer">
       <div className="container footer-grid">
@@ -1161,7 +1428,7 @@ function SiteFooter({ checkoutRoute, releaseNotesRoute }) {
             <img src="/EuterpeLogoBackgroundless.png" alt="Euterpe logo" />
             <span>Euterpe</span>
           </a>
-          <p>Focused listening. Local libraries. Zero clutter.</p>
+          <p>Focused listening. Local libraries. Zero clutter. Published by {publisherName}.</p>
         </div>
 
         <div className="footer-column">
@@ -1181,9 +1448,16 @@ function SiteFooter({ checkoutRoute, releaseNotesRoute }) {
 
         <div className="footer-column">
           <h3>Support</h3>
-          <a href="mailto:support@euterpe.app">Contact Support</a>
-          <a href="mailto:support@euterpe.app?subject=Euterpe%20Issue">Report an Issue</a>
-          <a href="#about">Privacy</a>
+          <a href={`mailto:${supportEmail}`}>Contact Support</a>
+          <a href={`mailto:${supportEmail}?subject=Euterpe%20Issue`}>Report an Issue</a>
+          <a href={privacyRoute}>Privacy Policy</a>
+        </div>
+
+        <div className="footer-column">
+          <h3>Legal</h3>
+          <a href={termsRoute}>Terms of Service</a>
+          <a href={termsRoute}>Refund Policy</a>
+          <a href={privacyRoute}>Privacy Policy</a>
         </div>
 
         <div className="footer-column footer-download">
@@ -1197,9 +1471,11 @@ function SiteFooter({ checkoutRoute, releaseNotesRoute }) {
 
       <div className="footer-legal">
         <div className="container footer-legal-inner">
-          <span>© 2026 Euterpe Project</span>
+          <span>© 2026 {publisherName}</span>
+          <span>Publisher: {publisherName}</span>
+          <span>{supportEmail}</span>
           <span>Built for focused listening</span>
-          <span>Privacy</span>
+          <span>Privacy and terms available from the footer</span>
         </div>
       </div>
     </footer>

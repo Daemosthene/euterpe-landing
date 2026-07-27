@@ -2,6 +2,10 @@ import Stripe from 'stripe';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
 
+function isValidEmailAddress(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
 function parseBody(body) {
   if (!body) {
     return {};
@@ -32,8 +36,8 @@ export default async function handler(req, res) {
   const email = typeof body.email === 'string' ? body.email.trim() : '';
   const country = typeof body.country === 'string' ? body.country : 'Unknown';
 
-  if (!email) {
-    return res.status(400).json({ error: 'Email is required.' });
+  if (!email || !isValidEmailAddress(email)) {
+    return res.status(400).json({ error: 'Enter a valid email address.' });
   }
 
   try {
@@ -59,8 +63,12 @@ export default async function handler(req, res) {
       sessionId: session.id
     });
   } catch (error) {
+    console.error('checkout.session.create.failed', {
+      message: error instanceof Error ? error.message : 'Unknown checkout session error.'
+    });
+
     return res.status(500).json({
-      error: error instanceof Error ? error.message : 'Unable to create checkout session.'
+      error: 'Unable to start checkout right now. Please try again in a moment.'
     });
   }
 }

@@ -656,7 +656,7 @@ img {
 .footer-grid {
   padding: 34px 0;
   display: grid;
-  grid-template-columns: 1.2fr repeat(3, minmax(0, 1fr)) 1.1fr;
+  grid-template-columns: 1.2fr repeat(4, minmax(0, 1fr)) 1.1fr;
   gap: 24px;
 }
 
@@ -969,6 +969,29 @@ img {
   font-size: 0.82rem;
 }
 
+.checkout-placeholder-note {
+  color: #f0c6c6;
+  font-weight: 550;
+}
+
+.checkout-flow-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  margin-top: 4px;
+  font-size: 0.86rem;
+}
+
+.checkout-flow-links a {
+  color: var(--text-muted);
+  text-decoration: none;
+}
+
+.checkout-flow-links a:hover {
+  color: var(--text);
+  text-decoration: underline;
+}
+
 .checkout-trust-row {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -998,6 +1021,23 @@ img {
 
 .checkout-alt-links a:hover {
   color: var(--text);
+  text-decoration: underline;
+}
+
+.legal-page .release-section-grid {
+  grid-template-columns: 1fr;
+}
+
+.legal-page .release-hero-panel {
+  gap: 12px;
+}
+
+.legal-page .release-summary-card a {
+  color: var(--text);
+  text-decoration: none;
+}
+
+.legal-page .release-summary-card a:hover {
   text-decoration: underline;
 }
 

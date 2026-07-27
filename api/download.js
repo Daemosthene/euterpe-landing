@@ -5,6 +5,14 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
 
+function redactSessionId(sessionId) {
+  if (typeof sessionId !== 'string' || sessionId.length <= 8) {
+    return sessionId;
+  }
+
+  return `${sessionId.slice(0, 4)}...${sessionId.slice(-4)}`;
+}
+
 function createR2Client() {
   return new S3Client({
     region: 'auto',
@@ -90,6 +98,7 @@ export default async function handler(req, res) {
   }
 
   try {
+    console.info('download.request', { sessionId: redactSessionId(sessionId) });
     const session = await stripe.checkout.sessions.retrieve(sessionId);
     const lineItems = await stripe.checkout.sessions.listLineItems(sessionId, { limit: 10 });
 
@@ -97,6 +106,13 @@ export default async function handler(req, res) {
     const isPaid = session.payment_status === 'paid' && session.status === 'complete';
 
     if (!isPaid || !matchesExpectedPrice) {
+      console.warn('download.denied', {
+        sessionId: redactSessionId(session.id),
+        paymentStatus: session.payment_status,
+        sessionStatus: session.status,
+        matchesExpectedPrice
+      });
+
       return res.status(403).json({ error: 'Payment verification failed for this session.' });
     }
 
@@ -109,14 +125,23 @@ export default async function handler(req, res) {
       ResponseContentDisposition: `attachment; filename="${fileNameFromKey(objectKey)}"`
     });
 
-    const signedUrl = await getSignedUrl(r2Client, command, { expiresIn: 180 });
+    const signedUrl = await getSignedUrl(r2Client, command, { expiresIn: 120 });
 
     res.setHeader('Cache-Control', 'no-store');
+    console.info('download.redirect', {
+      sessionId: redactSessionId(session.id),
+      expiresInSeconds: 120
+    });
     res.writeHead(302, { Location: signedUrl });
     return res.end();
   } catch (error) {
+    console.error('download.failed', {
+      sessionId: redactSessionId(sessionId),
+      message: error instanceof Error ? error.message : 'Unknown download error.'
+    });
+
     return res.status(500).json({
-      error: error instanceof Error ? error.message : 'Unable to generate secure download link.'
+      error: 'Unable to generate secure download link right now. Please retry in a moment.'
     });
   }
 }
