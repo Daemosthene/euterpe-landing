@@ -328,13 +328,17 @@ function App() {
   const [route, setRoute] = useState(getRouteFromHash());
   const [activeHeroSlide, setActiveHeroSlide] = useState(heroMiddleRepeatBlock * totalHeroSlides);
   const [isHeroDragging, setIsHeroDragging] = useState(false);
+  const [isHeroExpanded, setIsHeroExpanded] = useState(false);
   const [isHeroLoopResetting, setIsHeroLoopResetting] = useState(false);
   const [heroDragOffsetPx, setHeroDragOffsetPx] = useState(0);
   const heroViewportRef = useRef(null);
   const heroDragStateRef = useRef({
     pointerId: null,
     startX: 0,
+    startY: 0,
+    startTime: 0,
     lastX: 0,
+    lastY: 0,
     moved: false
   });
 
@@ -364,7 +368,10 @@ function App() {
     heroDragStateRef.current = {
       pointerId: event.pointerId,
       startX: event.clientX,
+      startY: event.clientY,
+      startTime: performance.now(),
       lastX: event.clientX,
+      lastY: event.clientY,
       moved: false
     };
     setIsHeroDragging(true);
@@ -378,15 +385,19 @@ function App() {
     }
 
     const deltaX = event.clientX - dragState.startX;
-    if (Math.abs(deltaX) > 3) {
+    const deltaY = event.clientY - dragState.startY;
+    const pointerTravel = Math.hypot(deltaX, deltaY);
+
+    if (pointerTravel > 3) {
       dragState.moved = true;
     }
 
     dragState.lastX = event.clientX;
+    dragState.lastY = event.clientY;
     setHeroDragOffsetPx(deltaX);
   };
 
-  const finishHeroDrag = (event) => {
+  const finishHeroDrag = (event, { allowTapToggle = true } = {}) => {
     const dragState = heroDragStateRef.current;
     if (dragState.pointerId !== event.pointerId) {
       return;
@@ -398,13 +409,34 @@ function App() {
     }
 
     const deltaX = dragState.lastX - dragState.startX;
+    const deltaY = dragState.lastY - dragState.startY;
     const threshold = Math.max(60, viewport.clientWidth * 0.12);
+    const shouldShiftSlide = Math.abs(deltaX) >= threshold;
+    const pointerTravel = Math.hypot(deltaX, deltaY);
+    const gestureDurationMs = performance.now() - dragState.startTime;
+    const isTapGesture = !shouldShiftSlide && pointerTravel <= 8 && gestureDurationMs <= 350;
 
-    if (Math.abs(deltaX) >= threshold) {
+    if (shouldShiftSlide) {
       if (deltaX < 0) {
         shiftHeroSlide(1);
       } else {
         shiftHeroSlide(-1);
+      }
+      setIsHeroExpanded(false);
+    }
+
+    if (allowTapToggle && isTapGesture) {
+      const viewportRect = viewport.getBoundingClientRect();
+      const pointerEndX = dragState.lastX - viewportRect.left;
+      const pointerEndY = dragState.lastY - viewportRect.top;
+      const tappedInsideViewport =
+        pointerEndX >= 0 &&
+        pointerEndX <= viewportRect.width &&
+        pointerEndY >= 0 &&
+        pointerEndY <= viewportRect.height;
+
+      if (tappedInsideViewport) {
+        setIsHeroExpanded((current) => !current);
       }
     }
 
@@ -412,7 +444,10 @@ function App() {
     heroDragStateRef.current = {
       pointerId: null,
       startX: 0,
+      startY: 0,
+      startTime: 0,
       lastX: 0,
+      lastY: 0,
       moved: false
     };
     setIsHeroDragging(false);
@@ -424,7 +459,7 @@ function App() {
   };
 
   const handleHeroPointerCancel = (event) => {
-    finishHeroDrag(event);
+    finishHeroDrag(event, { allowTapToggle: false });
   };
 
   const handleHeroKeyDown = (event) => {
@@ -724,7 +759,7 @@ function App() {
             </div>
 
             <div
-              className={`hero-screenshot hero-carousel${isHeroDragging ? ' is-dragging' : ''}`}
+              className={`hero-screenshot hero-carousel${isHeroDragging ? ' is-dragging' : ''}${isHeroExpanded ? ' is-expanded' : ''}`}
               aria-label="Euterpe interface screenshot carousel"
               role="region"
               tabIndex={0}
@@ -737,7 +772,6 @@ function App() {
                 onPointerMove={handleHeroPointerMove}
                 onPointerUp={handleHeroPointerUp}
                 onPointerCancel={handleHeroPointerCancel}
-                onPointerLeave={handleHeroPointerCancel}
               >
                 <div
                   className={`hero-carousel-track${isHeroDragging || isHeroLoopResetting ? ' no-transition' : ''}`}
@@ -758,24 +792,26 @@ function App() {
                     const blurPx = absoluteDistance * 1.2;
                     const brightness = 1 - absoluteDistance * 0.16;
                     const depthZ = (1 - absoluteDistance) * 48;
+                    const isActiveSlide = index === activeHeroSlide;
+                    const expandedScaleFactor = isHeroExpanded && isActiveSlide ? 1.18 : 1;
                     const zIndex = 100 - Math.round(absoluteDistance * 20);
 
                     return (
                       <div
                         className="hero-carousel-slide"
                         key={`${imageSrc}-${index}`}
-                        aria-hidden={index !== activeHeroSlide}
+                        aria-hidden={!isActiveSlide}
                         style={{
-                          transform: `translateZ(${depthZ}px) rotateY(${rotateY}deg) scale(${scale})`,
+                          transform: `translateZ(${depthZ}px) rotateY(${rotateY}deg) scale(${scale * expandedScaleFactor})`,
                           opacity,
                           filter: `blur(${blurPx}px) brightness(${brightness})`,
-                          zIndex
+                          zIndex: isHeroExpanded && isActiveSlide ? 140 : zIndex
                         }}
                       >
                         <ParallaxHeroImages
                           images={[imageSrc]}
                           variant="edge-focus"
-                          imageClassName="hero-screenshot-image"
+                          imageClassName={`hero-screenshot-image${isHeroExpanded && isActiveSlide ? ' expanded' : ''}`}
                         />
                       </div>
                     );
