@@ -24,24 +24,34 @@ const heroBenefits = [
 
 const whyCards = [
   {
-    icon: 'library',
-    title: 'Local library first',
-    description: 'Keep your collection on your machine instead of depending on a browser tab.'
+    icon: 'shield',
+    title: 'Pay once, own it for life',
+    description: 'One purchase unlocks Euterpe permanently with no time limit.'
   },
   {
     icon: 'bolt',
-    title: 'Fast and responsive',
-    description: 'Search, queue, and jump between tracks without waiting on a heavy web app.'
+    title: 'No subscriptions',
+    description: 'No recurring fees, renewals, or monthly plans.'
   },
   {
-    icon: 'shield',
-    title: 'Private by design',
-    description: 'Play your own files and keep the listening workflow centered on your device.'
+    icon: 'library',
+    title: 'Local-first and offline ready',
+    description: 'Your library stays on your device and keeps playing without internet.'
   },
   {
-    icon: 'windows',
-    title: 'Built for Windows',
-    description: 'A desktop-first experience tuned for the way Windows users expect apps to behave.'
+    icon: 'download',
+    title: 'Integrated downloader',
+    description: 'Download single tracks, playlists, and mixes directly inside Euterpe.'
+  },
+  {
+    icon: 'playlist',
+    title: 'Easy library onboarding',
+    description: 'Add an existing music folder and start listening right away.'
+  },
+  {
+    icon: 'queue',
+    title: 'Keyboard-first workflow',
+    description: 'Core actions are optimized for fast shortcut-driven control.'
   }
 ];
 
@@ -68,34 +78,49 @@ const workflow = [
 
 const features = [
   {
-    title: 'Resume exactly where you stopped',
-    description: 'Playlist persistence keeps playback and queue state ready for the next launch.',
-    icon: 'playlist'
-  },
-  {
-    title: 'Find tracks quickly',
-    description: 'Fast search and queueing keep large libraries manageable without friction.',
-    icon: 'search'
-  },
-  {
-    title: 'Background downloads',
-    description: 'Download new audio while the player remains responsive and focused.',
+    title: 'Cookie-assisted downloads',
+    description: 'Import cookies for sources that are harder to fetch with default requests.',
     icon: 'download'
   },
   {
-    title: 'Tray mini-player',
-    description: 'Keep playback available from the tray without losing your place.',
-    icon: 'monitor'
-  },
-  {
-    title: 'Metadata aware',
-    description: 'Track names and ordering stay easy to scan and simple to manage.',
+    title: 'MP3 or original audio output',
+    description: 'Choose converted MP3 output or keep the original source format.',
     icon: 'tag'
   },
   {
-    title: 'Built around local files',
-    description: 'The app works best when your music lives on your own computer.',
+    title: 'Intelligent lyrics fallback',
+    description: 'Lyrics lookup automatically falls back across providers for better matches.',
+    icon: 'search'
+  },
+  {
+    title: 'Offline lyrics cache',
+    description: 'After first fetch, lyrics stay available offline for future listening.',
     icon: 'library'
+  },
+  {
+    title: 'Powerful track manipulation',
+    description: 'Use drag reorder, multi-select copy and paste, cross-playlist moves, and undo.',
+    icon: 'queue'
+  },
+  {
+    title: 'Flexible deletion controls',
+    description: 'Remove tracks from Euterpe only, or delete selected tracks from disk.',
+    icon: 'shield'
+  },
+  {
+    title: 'Fast sorting options',
+    description: 'Switch between A-Z, Z-A, oldest, newest, or default order per workflow.',
+    icon: 'playlist'
+  },
+  {
+    title: 'Search where you need it',
+    description: 'Search the current playlist or run broader searches across your library.',
+    icon: 'search'
+  },
+  {
+    title: 'Refresh with order preserved',
+    description: 'Detect new files in folder playlists while preserving your custom track order.',
+    icon: 'monitor'
   }
 ];
 
@@ -722,7 +747,7 @@ function App() {
         <section className="hero section">
           <div className="aurora-background" aria-hidden="true">
             <Aurora
-              colorStops={['#4d4d4d', '#c9c9c9', '#4d4d4d']}
+              colorStops={['#2a2418', '#d4a24c', '#2a2418']}
               amplitude={0.45}
               blend={0.55}
               speed={0.7}
@@ -905,8 +930,13 @@ function App() {
               <h2>About Euterpe</h2>
             </div>
             <p className="about-text">
-              Euterpe is for listeners who want a Windows-native player that keeps the full music workflow local,
-              from library management to queue control and background downloads, without the clutter of a browser-first app.
+              Euterpe is a local-first Windows music player for power users who want deterministic control over their
+              library workflow: fast indexed search, playlist-level sort modes, drag reorder, multi-select copy/paste,
+              cross-playlist moves with undo, and scoped deletion (remove from Euterpe or delete from disk). It
+              combines responsive native playback with integrated downloading (single tracks, playlists, mixes),
+              cookie-assisted retrieval for tougher sources, MP3-or-original output, and lyrics lookup with provider
+              fallback plus offline cache, so your full ingest-to-playback pipeline stays on your machine and out of
+              the browser.
             </p>
           </div>
         </section>
@@ -1217,7 +1247,7 @@ function CheckoutPage({ checkoutRoute, releaseNotesRoute, privacyRoute, termsRou
               <h2>Your order</h2>
 
               <div className="order-product-row">
-                <img src="/EuterpeLogoBackgroundless.png" alt="Euterpe app icon" />
+                <img src="/EuterpeIcon.png" alt="Euterpe app icon" />
                 <div>
                   <strong>Euterpe Desktop App</strong>
                   <p>One-time purchase</p>
