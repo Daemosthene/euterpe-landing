@@ -9,7 +9,7 @@ const checkoutRoute = '#checkout';
 const checkoutSuccessRoute = '#checkout/success';
 const privacyRoute = '#privacy';
 const termsRoute = '#terms';
-const supportEmail = 'support@euterpe-app.com';
+const supportEmail = 'support@euterpeapp.com';
 const publisherName = 'Euterpe Project';
 const heroImages = ['/EuterpeHero1.png', '/EuterpeHero2.png', '/EuterpeHero3.png'];
 const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
@@ -229,7 +229,7 @@ const privacySummaryCards = [
 
 const privacySections = [
   {
-    title: 'Information we collect',
+    title: 'Information we collect (website and Windows checkout)',
     items: [
       'The email address you enter at checkout so we can complete purchase and support follow-up.',
       'Country or region for basic reporting and purchase context.',
@@ -251,6 +251,18 @@ const privacySections = [
       'Token-based download links are short-lived and require server-side verification.',
       'Payment and fulfillment checks are kept to the minimum needed for support and auditability.',
       'We do not use this information for advertising or newsletter tracking.'
+    ]
+  },
+  {
+    title: 'Euterpe for iOS and Android',
+    items: [
+      'The mobile app does not collect, store, or share any personal information with us. It has no account, sign-in, analytics, advertising, or tracking.',
+      'Songs and folders you import are copied into the app’s private storage on your device. Your library, playlists, cover art, and settings stay on your device and are never uploaded.',
+      'The app does not connect to our servers or any other online service to work, so it plays your music fully offline.',
+      'Unlike the Windows app, the mobile app has no lyrics feature, so it never sends song titles or artist names to lyrics services such as LRCLIB or lyrics.ovh.',
+      'The app reads only the files and folders you choose in your phone’s file picker. It uses background audio only to keep playing your music when the screen is off.',
+      'Purchases are handled entirely by the Apple App Store or Google Play under their own privacy policies. We never see your payment details; the stores may share sales totals and, if you opt in to sharing diagnostics with them, anonymous crash reports with us.',
+      'Deleting the app removes everything it stored on your device.'
     ]
   },
   {
