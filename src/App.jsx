@@ -283,8 +283,8 @@ const termsSummaryCards = [
   },
   {
     eyebrow: 'Refunds',
-    title: 'Refund review by email',
-    description: 'Use the support inbox with your order details if you need a billing or refund review.'
+    title: 'By email or through your app store',
+    description: 'Windows: email the support inbox with your order details. Mobile: request refunds from Google Play or the App Store.'
   },
   {
     eyebrow: 'Release notes',
@@ -295,7 +295,7 @@ const termsSummaryCards = [
 
 const termsSections = [
   {
-    title: 'License and purchase',
+    title: 'License and purchase (Windows)',
     items: [
       'The purchase unlocks the current Windows executable for a single Windows device license.',
       'This is a one-time purchase, not a subscription.',
@@ -303,7 +303,7 @@ const termsSections = [
     ]
   },
   {
-    title: 'Refund policy',
+    title: 'Refund policy (Windows)',
     items: [
       `Refund and billing review requests should be sent to ${supportEmail}.`,
       'Include the checkout email address and any relevant session details so we can verify the purchase quickly.',
@@ -311,11 +311,22 @@ const termsSections = [
     ]
   },
   {
-    title: 'Acceptable use',
+    title: 'Acceptable use (Windows download)',
     items: [
       'Do not share the gated download link or token publicly.',
       'Keep access limited to the device covered by the purchase.',
       'Use the product in a way that respects the download and payment checks protecting the release.'
+    ]
+  },
+  {
+    title: 'Euterpe for iOS and Android',
+    items: [
+      'The mobile app is sold through Google Play and the Apple App Store as a one-time purchase. It has no subscriptions or in-app purchases.',
+      'Your purchase is tied to the store account you bought it with, and you can install the app on your devices under that store\u2019s rules for purchased apps.',
+      'Payment, refunds and receipts are handled by the store you bought from, under its refund policy. Request a refund from Google Play or Apple directly.',
+      `For help with the app itself, contact ${supportEmail}.`,
+      'Euterpe plays music you already have. You are responsible for having the right to use the files you import. The app does not provide, sell or stream music.',
+      'Updates are delivered through the app store. The Windows license and the mobile app are separate purchases.'
     ]
   },
   {
@@ -714,7 +725,7 @@ function App() {
         routeTitle="Terms"
         eyebrow="Terms of sale"
         title="Purchase terms, refund review, and license notes"
-        intro="These terms describe the one-time purchase, refund review path, and the license that applies to the Windows download."
+        intro="These terms describe the one-time purchase, refunds, and the license for the Windows download and the iOS and Android apps."
         summaryCards={termsSummaryCards}
         sections={termsSections}
         checkoutRoute={checkoutRoute}
